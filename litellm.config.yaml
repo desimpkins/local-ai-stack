@@ -1,0 +1,21 @@
+general_settings:
+  master_key: "${LITELLM_MASTER_KEY}"
+  telemetry: false
+
+
+# OpenAI models
+# model_list:
+#   - model_name: "*"             # all requests where model not in your config go to this deployment
+#     litellm_params:
+#      model: openai/*           # set `openai/` to use the openai route
+#      api_key: ${OPENAI_API_KEY}
+
+# model_list:
+#   # OpenAI models
+#   - model_name: gpt-4o
+#     litellm_provider: openai
+#     config:
+#       api_key: ${OPENAI_API_KEY}
+#     litellm_params:
+#       model: gpt-4o
+

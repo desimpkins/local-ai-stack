@@ -1,0 +1,154 @@
+
+
+services:
+  ## 🧠 LLM Proxy - LiteLLM connects all your models (local & cloud) - https://github.com/BerriAI/litellm/
+  litellm:
+    image: ghcr.io/berriai/litellm:main-stable
+    platform: linux/arm64/v8
+    container_name: litellm
+    ports:
+      - "4000:4000"
+    volumes:
+      - ./litellm.config.yaml:/app/litellm.config.yaml
+    environment:
+      - LITELLM_MASTER_KEY=${LITELLM_MASTER_KEY}
+      - LITELLM_SALT_KEY=${LITELLM_SALT_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      - XAI_API_KEY=${XAI_API_KEY}
+      - DATABASE_URL=${DATABASE_URL}
+      - STORE_MODEL_IN_DB=True
+    env_file:
+      - .env
+    command: --config /app/litellm.config.yaml
+    networks:
+      - ai-net
+    depends_on:
+      - ollama
+      - litellm_db
+
+  ## 💬 Chat interface (with memory, RAG, etc.) - https://github.com/open-webui/open-webui
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: open-webui
+    ports:
+      - "3000:8080"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      - WEBUI_SECRET_KEY=${WEBUI_SECRET_KEY}
+    networks:
+      - ai-net
+    depends_on:
+      - litellm
+    volumes:
+      - ./open-webui:/app/backend/data
+
+  ## 🧱 Ollama (local model runner) - https://github.com/ollama/ollama
+  ollama:
+    image: ollama/ollama
+    container_name: ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_models:/root/.ollama
+    networks:
+      - ai-net
+
+  ## 🗃️ PostgreSQL for LiteLLM UI and config storage - https://github.com/docker-library/docs/blob/master/postgres/README.md
+  litellm_db:
+    image: postgres:16
+    restart: always
+    container_name: litellm_db
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    env_file:
+      - .env
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -d litellm -U llmproxy"]
+      interval: 1s
+      timeout: 5s
+      retries: 10
+    networks:
+      - ai-net
+
+## Prometheus (came with litellm) - https://github.com/BerriAI/litellm/
+  prometheus:
+    image: prom/prometheus
+    volumes:
+      - prometheus_data:/prometheus
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--storage.tsdb.retention.time=15d"
+    restart: always
+
+## MCPO Control Panel - https://github.com/daswer123/mcpo-control-panel (not reliable)
+  mcpo-control-panel:
+    build:
+      context: .
+      dockerfile: ./MCP/mcpo_control_panel/Dockerfile
+    ports:
+      - "8083:8083"
+      - "8000:8000"
+    volumes:
+      - ./data:/data
+    environment:
+      MCPO_MANAGER_HOST: "0.0.0.0"
+      MCPO_MANAGER_PORT: "8083"
+      MCPO_MANAGER_DATA_DIR: "/data"
+    restart: unless-stopped
+    command: ["uv", "run", "python", "-m", "mcpo_control_panel", "--host", "0.0.0.0", "--port", "8083", "--config-dir", "/data"]
+
+## Memory - https://github.com/modelcontextprotocol/servers/blob/main/src/memory
+  memory:
+    build:
+      context: ./MCP/servers/src/memory
+      dockerfile: Dockerfile
+    image: mcp/memory
+
+## Google Workspace - https://github.com/taylorwilsdon/google_workspace_mcp/tree/main
+  workspace-mcp:
+    build:
+      context: ./MCP/google_workspace_mcp
+      dockerfile: Dockerfile
+    image: workspace-mcp:latest
+    ports:
+      - "8001:8001"
+    environment:
+      - PORT=8001
+    volumes:
+    - ./MCP/client_secret.json:/app/client_secret.json:ro
+    networks:
+      - ai-net
+
+## =====
+volumes:
+  prometheus_data:
+    name: prometheus_data
+    driver: local
+  postgres_data:
+    name: litellm_postgres_data
+  ollama_models:
+    name: ollama_models
+  memory_data:
+    name: memory_data
+
+networks:
+  ai-net:
+    driver: bridge
+
+## Other resources
+# MCPO info: https://github.com/open-webui/mcpo?tab=readme-ov-file & https://docs.openwebui.com/openapi-servers/mcp
+# Many more MCP servers: https://github.com/modelcontextprotocol/servers/tree/main
+

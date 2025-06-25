@@ -1,0 +1,27 @@
+{
+  "port": 8000,
+  "use_api_key": false,
+  "config_file_path": "/data/mcp_generated_config.json",
+  "log_file_path": "/data/mcpo_manager.log",
+  "log_auto_refresh_enabled": true,
+  "log_auto_refresh_interval_seconds": 5,
+  "health_check_enabled": true,
+  "health_check_interval_seconds": 10,
+  "health_check_failure_attempts": 3,
+  "health_check_failure_retry_delay_seconds": 5,
+  "auto_restart_on_failure": true,
+  "manual_config_mode_enabled": false,
+  "root_path": "",
+  "INTERNAL_ECHO_SERVER_NAME": "echo-mcp-server-for-testing",
+  "INTERNAL_ECHO_SERVER_COMMAND": "uvx",
+  "INTERNAL_ECHO_SERVER_ARGS": [
+    "echo-mcp-server-for-testing"
+  ],
+  "INTERNAL_ECHO_SERVER_ENV": {
+    "MCP_MANAGER_HEALTH_CHECK": "true"
+  },
+  "INTERNAL_ECHO_TOOL_PATH": "/echo_tool",
+  "INTERNAL_ECHO_PAYLOAD": {
+    "message": "mcp_manager_health_check_ping"
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "mcpServers": {
+    "time": {
+      "command": "uvx",
+      "args": ["mcp-server-time", "--local-timezone=Australia/Melbourne"]
+    },
+    "mcp-obsidian": {
+      "command": "uvx",
+      "args": ["mcp-obsidian"],
+      "env": {
+        "OBSIDIAN_API_KEY": "${OBSIDIAN_API_KEY}",
+        "OBSIDIAN_HOST": "${OBSIDIAN_HOST}",
+        "OBSIDIAN_PORT": "${OBSIDIAN_PORT}"
+      }
+    },
+    "memory": {
+      "command": "docker",
+      "args": ["run", "-i", "-v", "memory_data:/app/dist", "--rm", "mcp/memory"]
+    },
+    "google_workspace": {
+      "command": "uvx",
+      "args": ["workspace-mcp", "--transport", "streamable-http"],
+      "type": "streamablehttp",
+      "url": "http://localhost:8000/mcp"
+    }
+  }
+}

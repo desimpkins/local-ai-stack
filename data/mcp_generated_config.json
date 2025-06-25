@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "echo-mcp-server-for-testing": {
+      "command": "uvx",
+      "args": [
+        "echo-mcp-server-for-testing"
+      ],
+      "env": {
+        "MCP_MANAGER_HEALTH_CHECK": "true"
+      }
+    }
+  }
+}
